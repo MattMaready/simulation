@@ -1,0 +1,20 @@
+# =============================================================================
+# empty.world.yaml — flat ground plane only. Handy for checking the robot model
+# (does it sit level? does it drive straight?) without walls in the way.
+# Regenerate with: ./scripts/bld.sh --worlds
+# =============================================================================
+name: empty
+
+floor:
+  size: [30.0, 30.0]
+  material: floor
+
+defaults:
+  wall_height: 2.0
+  wall_thickness: 0.2
+  wall_material: concrete
+
+spawn: {x: 0.0, y: 0.0, yaw: 0.0}
+
+walls: []
+props: []

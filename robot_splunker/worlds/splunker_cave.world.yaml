@@ -1,0 +1,66 @@
+# =============================================================================
+# splunker_cave.world.yaml — SINGLE SOURCE OF TRUTH for the "splunker_cave" world.
+#
+# Edit this file, then regenerate BOTH simulators' world files:
+#     ./scripts/bld.sh --worlds          (or: python3 scripts/generate_world.py)
+# which writes:
+#     src/robot_splunker_gazebo/worlds/splunker_cave.sdf        (Gazebo)
+#     src/robot_splunker_gazebo/worlds/splunker_cave.meta.json  (spawn pose for launch files)
+#     unreal/SplunkerViz/Content/Splunker/Data/splunker_cave_layout.json  (Unreal)
+#
+# Frame: ROS / Gazebo world frame — x forward (east), y left (north), z up.
+# Units: metres and radians.
+# Layout: a 15 x 15 m area split into four rooms joined by 1.3 m doorways,
+#         with pillars, crates and partial walls to make exploration interesting.
+# =============================================================================
+name: splunker_cave
+
+floor:
+  size: [16.0, 16.0]          # x, y extent of the ground plane
+  material: floor
+
+defaults:
+  wall_height: 2.0
+  wall_thickness: 0.2
+  wall_material: concrete
+
+# Where the robot starts (also the origin of SLAM's "map" frame).
+spawn: {x: -5.0, y: -5.0, yaw: 0.785}
+
+# Walls are line segments; each becomes a box of the default height/thickness.
+# material tags: concrete | rock | brick | metal | wood  (colours in Gazebo, materials in Unreal)
+walls:
+  # ---- outer boundary ----
+  - {start: [-7.5, -7.5], end: [ 7.5, -7.5], material: rock}
+  - {start: [ 7.5, -7.5], end: [ 7.5,  7.5], material: rock}
+  - {start: [ 7.5,  7.5], end: [-7.5,  7.5], material: rock}
+  - {start: [-7.5,  7.5], end: [-7.5, -7.5], material: rock}
+
+  # ---- north-south divider (x = 0) with doorways at y = -4.5..-3.2 and y = 3.0..4.3 ----
+  - {start: [0.0, -7.5], end: [0.0, -4.5]}
+  - {start: [0.0, -3.2], end: [0.0,  3.0]}
+  - {start: [0.0,  4.3], end: [0.0,  7.5]}
+
+  # ---- east-west divider (y = 0) with doorways at x = -5.0..-3.7 and x = 3.5..4.8 ----
+  - {start: [-7.5, 0.0], end: [-5.0, 0.0], material: brick}
+  - {start: [-3.7, 0.0], end: [ 3.5, 0.0], material: brick}
+  - {start: [ 4.8, 0.0], end: [ 7.5, 0.0], material: brick}
+
+  # ---- north-west room: partial wall forming a corridor ----
+  - {start: [-6.0, 3.0], end: [-2.5, 3.0]}
+
+  # ---- north-east room: L-shaped wall ----
+  - {start: [2.0, 2.0], end: [5.5, 2.0], material: metal}
+  - {start: [5.5, 2.0], end: [5.5, 5.5], material: metal}
+
+# Free-standing objects. shape: box (size [x,y,z]) or cylinder (radius, height).
+props:
+  - {name: pillar_sw,  shape: cylinder, xy: [-2.5, -2.5], radius: 0.30, height: 2.0, material: concrete}
+  - {name: crate_sw,   shape: box,      xy: [-6.3, -2.0], size: [0.8, 0.8, 0.8], yaw: 0.30, material: wood}
+  - {name: pillar_se1, shape: cylinder, xy: [ 2.5, -2.5], radius: 0.30, height: 2.0, material: concrete}
+  - {name: pillar_se2, shape: cylinder, xy: [ 4.5, -4.5], radius: 0.30, height: 2.0, material: concrete}
+  - {name: pillar_se3, shape: cylinder, xy: [ 2.5, -5.8], radius: 0.30, height: 2.0, material: concrete}
+  - {name: crate_se,   shape: box,      xy: [ 6.2, -6.2], size: [0.8, 0.8, 0.8], yaw: 0.0,  material: wood}
+  - {name: crate_nw1,  shape: box,      xy: [-3.0,  5.5], size: [1.0, 0.6, 0.7], yaw: 0.5,  material: wood}
+  - {name: crate_nw2,  shape: box,      xy: [-6.0,  5.6], size: [0.8, 0.8, 0.8], yaw: 0.0,  material: wood}
+  - {name: rock_ne,    shape: box,      xy: [ 3.5,  4.0], size: [0.9, 0.9, 0.6], yaw: 0.7,  material: rock}

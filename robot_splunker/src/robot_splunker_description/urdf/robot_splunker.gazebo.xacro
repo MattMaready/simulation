@@ -1,0 +1,182 @@
+<?xml version="1.0"?>
+<!--
+  robot_splunker.gazebo.xacro — everything Gazebo (Harmonic) specific:
+    1. Colour values (single place; also exported as URDF <material>s for RViz)
+    2. Per-link visual material for Gazebo (ambient / diffuse / specular)
+    3. Contact friction (grippy wheels, frictionless caster)
+    4. Model plugins: DiffDrive, JointStatePublisher, OdometryPublisher (ground truth)
+    5. Sensors: gpu_lidar and IMU
+
+  Harmonic notes:
+    * Old Gazebo-classic names such as <material>Gazebo/Orange</material> do NOT work;
+      colours must be given as <visual><material><ambient>/<diffuse>.
+    * URDF fixed joints are merged ("lumped") into the parent link when converted to
+      SDF, so sensors set <gz_frame_id> to keep the ROS frame name (lidar_link, imu_link).
+    * Topic names here must match the gz_topic_name entries in
+      robot_splunker_gazebo/config/parameters.yaml (the ROS <-> Gazebo bridge).
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ============================================================
+       1. Colours  (RGBA 0..1)
+       ============================================================ -->
+  <xacro:property name="color_orange" value="1.0 0.45 0.05 1"/>
+  <xacro:property name="color_black"  value="0.05 0.05 0.05 1"/>
+  <xacro:property name="color_grey"   value="0.55 0.55 0.55 1"/>
+  <xacro:property name="color_blue"   value="0.05 0.15 0.45 1"/>
+
+  <!-- URDF materials (used by RViz and as a fallback by the URDF->SDF converter). -->
+  <material name="splunker_orange"><color rgba="${color_orange}"/></material>
+  <material name="splunker_black"><color rgba="${color_black}"/></material>
+  <material name="splunker_grey"><color rgba="${color_grey}"/></material>
+  <material name="splunker_blue"><color rgba="${color_blue}"/></material>
+
+  <!-- gz_color: Gazebo visual material block for one link.
+       ambient = base colour, diffuse = lit colour, specular = shininess highlight. -->
+  <xacro:macro name="gz_color" params="link rgba specular:='0.2 0.2 0.2 1'">
+    <gazebo reference="${link}">
+      <visual>
+        <material>
+          <ambient>${rgba}</ambient>
+          <diffuse>${rgba}</diffuse>
+          <specular>${specular}</specular>
+        </material>
+      </visual>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- ============================================================
+       2. Per-link colours in Gazebo
+       ============================================================ -->
+  <xacro:gz_color link="chassis"     rgba="${color_orange}" specular="0.5 0.5 0.5 1"/>
+  <xacro:gz_color link="left_wheel"  rgba="${color_black}"  specular="0.05 0.05 0.05 1"/>
+  <xacro:gz_color link="right_wheel" rgba="${color_black}"  specular="0.05 0.05 0.05 1"/>
+  <xacro:gz_color link="caster_link" rgba="${color_grey}"   specular="0.8 0.8 0.8 1"/>
+  <xacro:gz_color link="lidar_link"  rgba="${color_blue}"/>
+  <xacro:gz_color link="imu_link"    rgba="${color_grey}"/>
+
+  <!-- ============================================================
+       3. Contact friction
+       mu1/mu2 : friction coefficients along / across the contact direction
+       kp/kd   : contact stiffness / damping (stiff, so wheels don't sink)
+       ============================================================ -->
+  <gazebo reference="left_wheel">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+  </gazebo>
+  <gazebo reference="right_wheel">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+  </gazebo>
+  <!-- Frictionless caster: it slides like a ball caster. -->
+  <gazebo reference="caster_link">
+    <mu1>0.0</mu1>
+    <mu2>0.0</mu2>
+  </gazebo>
+
+  <!-- ============================================================
+       4. Model plugins
+       ============================================================ -->
+  <gazebo>
+    <!-- Differential drive: subscribes to Twist on cmd_vel, drives the two wheel joints,
+         publishes odometry on odom and the odom -> base_footprint transform on tf. -->
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>${wheel_separation}</wheel_separation>
+      <wheel_radius>${wheel_radius}</wheel_radius>
+      <max_linear_acceleration>${max_linear_acceleration}</max_linear_acceleration>
+      <min_linear_acceleration>${-max_linear_acceleration}</min_linear_acceleration>
+      <max_angular_acceleration>${max_angular_acceleration}</max_angular_acceleration>
+      <min_angular_acceleration>${-max_angular_acceleration}</min_angular_acceleration>
+      <max_linear_velocity>${max_linear_velocity}</max_linear_velocity>
+      <min_linear_velocity>${-max_linear_velocity}</min_linear_velocity>
+      <max_angular_velocity>${max_angular_velocity}</max_angular_velocity>
+      <min_angular_velocity>${-max_angular_velocity}</min_angular_velocity>
+      <topic>cmd_vel</topic>
+      <odom_topic>odom</odom_topic>
+      <tf_topic>tf</tf_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+      <odom_publisher_frequency>30</odom_publisher_frequency>
+    </plugin>
+
+    <!-- Publishes the wheel joint angles (bridged to /joint_states so
+         robot_state_publisher can place the wheel frames, and Unreal can spin them). -->
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>joint_states</topic>
+      <joint_name>left_wheel_joint</joint_name>
+      <joint_name>right_wheel_joint</joint_name>
+    </plugin>
+
+    <!-- GROUND TRUTH pose of the robot in the Gazebo world frame. Used ONLY by the
+         Unreal twin (ue_bridge) so it shows where the robot really is; SLAM and Nav2
+         never see it. dimensions=3 publishes full 3D pose (default is 2D). -->
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>world</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <odom_topic>ground_truth/odom</odom_topic>
+      <tf_topic>ground_truth/tf</tf_topic>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <dimensions>3</dimensions>
+    </plugin>
+  </gazebo>
+
+  <!-- ============================================================
+       5. Sensors
+       ============================================================ -->
+  <!-- 2D 360° lidar: 360 rays, 1° apart, 0.12..12 m, 10 Hz, small gaussian noise.
+       Requires the gz-sim-sensors-system (ogre2) plugin in the world. -->
+  <gazebo reference="lidar_link">
+    <sensor name="lidar" type="gpu_lidar">
+      <topic>scan</topic>
+      <gz_frame_id>lidar_link</gz_frame_id>
+      <update_rate>${lidar_rate}</update_rate>
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <lidar>
+        <scan>
+          <horizontal>
+            <samples>${lidar_samples}</samples>
+            <resolution>1</resolution>
+            <min_angle>${-pi}</min_angle>
+            <max_angle>${pi - 2*pi/lidar_samples}</max_angle>
+          </horizontal>
+          <vertical>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>0</min_angle>
+            <max_angle>0</max_angle>
+          </vertical>
+        </scan>
+        <range>
+          <min>${lidar_min_range}</min>
+          <max>${lidar_max_range}</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </lidar>
+    </sensor>
+  </gazebo>
+
+  <!-- IMU: angular velocity + linear acceleration + orientation at 100 Hz.
+       Requires the gz-sim-imu-system plugin in the world. -->
+  <gazebo reference="imu_link">
+    <sensor name="imu" type="imu">
+      <topic>imu</topic>
+      <gz_frame_id>imu_link</gz_frame_id>
+      <update_rate>${imu_rate}</update_rate>
+      <always_on>true</always_on>
+      <visualize>false</visualize>
+    </sensor>
+  </gazebo>
+
+</robot>

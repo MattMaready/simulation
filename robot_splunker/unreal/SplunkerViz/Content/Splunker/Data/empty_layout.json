@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "generated_from": "worlds/empty.world.yaml",
+  "units": "cm, degrees, Unreal left-handed (X fwd, Y right, Z up)",
+  "world": "empty",
+  "floor": {
+    "material": "floor",
+    "loc": [
+      0.0,
+      0.0,
+      -1.0
+    ],
+    "size": [
+      3000.0,
+      3000.0,
+      2.0
+    ]
+  },
+  "spawn": {
+    "loc": [
+      0.0,
+      -0.0,
+      0.0
+    ],
+    "rot": [
+      0.0,
+      -0.0,
+      0.0
+    ]
+  },
+  "items": []
+}

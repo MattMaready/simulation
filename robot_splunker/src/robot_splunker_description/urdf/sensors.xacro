@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<!--
+  sensors.xacro — links and joints for the sensors mounted on robot_splunker.
+  The Gazebo <sensor> definitions (rate, range, topic) live in robot_splunker.gazebo.xacro.
+
+    lidar_link : 2D 360° lidar puck on top of the chassis   -> /scan  (needed by SLAM)
+    imu_link   : IMU at the chassis centre                  -> /imu
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ================= 2D lidar ================= -->
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="${lidar_x} 0 ${lidar_z}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="lidar_link">
+    <visual>
+      <geometry><cylinder radius="${lidar_radius}" length="${lidar_height}"/></geometry>
+      <material name="splunker_blue"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="${lidar_radius}" length="${lidar_height}"/></geometry>
+    </collision>
+    <xacro:cylinder_inertia m="${lidar_mass}" r="${lidar_radius}" h="${lidar_height}"/>
+  </link>
+
+  <!-- ================= IMU ================= -->
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="${chassis_x_offset} 0 ${chassis_z_offset}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="imu_link">
+    <visual>
+      <geometry><box size="${imu_size} ${imu_size} ${imu_size}"/></geometry>
+      <material name="splunker_grey"/>
+    </visual>
+    <xacro:box_inertia m="${imu_mass}" x="${imu_size}" y="${imu_size}" z="${imu_size}"/>
+  </link>
+
+</robot>

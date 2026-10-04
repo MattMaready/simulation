@@ -1,0 +1,94 @@
+# =============================================================================
+# parameters.yaml: ROS 2 <-> Gazebo bridge configuration for robot_splunker.
+#
+# Loaded by ros_gz_bridge's parameter_bridge in launch/sim.launch.py:
+#     Node(package='ros_gz_bridge', executable='parameter_bridge',
+#          parameters=[{'config_file': <this file>}])
+#
+# Each entry maps ONE topic between the two middlewares:
+#   ros_topic_name : topic name on the ROS 2 side
+#   gz_topic_name  : topic name on the Gazebo Transport side (must match the
+#                    <topic>/<odom_topic>/... set in robot_splunker.gazebo.xacro)
+#   ros_type_name  : ROS 2 message type
+#   gz_type_name   : Gazebo message type
+#   direction      : GZ_TO_ROS     Gazebo publishes, ROS subscribes (sensors, clock)
+#                    ROS_TO_GZ     ROS publishes, Gazebo subscribes (commands)
+#                    BIDIRECTIONAL both ways (not used here)
+#
+# Inspect the Gazebo side with  `gz topic -l` / `gz topic -e -t /scan`
+# and the ROS side with         `ros2 topic list` / `ros2 topic echo /scan`.
+# docs/gazebo_bridge.md explains every entry and how to add new ones.
+# =============================================================================
+
+# ---- Simulation clock -------------------------------------------------------
+# Every ROS node runs with use_sim_time:=true and takes its time from /clock, so
+# SLAM, Nav2 and TF stay consistent even when Gazebo runs slower than real time.
+- ros_topic_name: "/clock"
+  gz_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  direction: GZ_TO_ROS
+
+# ---- Velocity commands --------------------------------------------------------
+# Nav2 / teleop publish Twist on /cmd_vel; the DiffDrive plugin turns it into
+# wheel speeds. (Nav2 is configured with enable_stamped_cmd_vel: false so the
+# type is plain Twist, matching this entry.)
+- ros_topic_name: "/cmd_vel"
+  gz_topic_name: "/cmd_vel"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_type_name: "gz.msgs.Twist"
+  direction: ROS_TO_GZ
+
+# ---- Wheel odometry ----------------------------------------------------------
+# DiffDrive's dead-reckoning estimate (odom -> base_footprint). Used by Nav2's
+# velocity smoother and controller.
+- ros_topic_name: "/odom"
+  gz_topic_name: "/odom"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  direction: GZ_TO_ROS
+
+# ---- odom -> base_footprint transform ------------------------------------------
+# DiffDrive publishes the odometry transform as a Pose_V; the bridge converts it
+# into a tf2 TFMessage. SLAM Toolbox adds map -> odom on top of it.
+- ros_topic_name: "/tf"
+  gz_topic_name: "/tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+  direction: GZ_TO_ROS
+
+# ---- Wheel joint angles --------------------------------------------------------
+# robot_state_publisher needs these to publish base_link -> left/right_wheel;
+# the Unreal twin uses them to spin its wheels.
+- ros_topic_name: "/joint_states"
+  gz_topic_name: "/joint_states"
+  ros_type_name: "sensor_msgs/msg/JointState"
+  gz_type_name: "gz.msgs.Model"
+  direction: GZ_TO_ROS
+
+# ---- 2D lidar ----------------------------------------------------------------------
+# 360-ray gpu_lidar on lidar_link. THE input for SLAM Toolbox and Nav2 costmaps.
+- ros_topic_name: "/scan"
+  gz_topic_name: "/scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+  direction: GZ_TO_ROS
+
+# ---- IMU -----------------------------------------------------------------------------
+# Angular velocity / linear acceleration / orientation from imu_link. Not used by
+# the default pipeline; available for an EKF (robot_localization) if you add one.
+- ros_topic_name: "/imu"
+  gz_topic_name: "/imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
+  direction: GZ_TO_ROS
+
+# ---- Ground-truth pose (Unreal twin only) ---------------------------------------------
+# OdometryPublisher reports the robot's TRUE pose in the Gazebo world frame. Only
+# the ue_bridge node uses it, so the Unreal twin is exactly where Gazebo's robot is.
+# Do NOT feed this to SLAM/Nav2 (it would be cheating).
+- ros_topic_name: "/ground_truth/odom"
+  gz_topic_name: "/ground_truth/odom"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  direction: GZ_TO_ROS

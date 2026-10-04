@@ -1,0 +1,17 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.5",
+	"Category": "",
+	"Description": "Unreal Engine 5 digital-twin visualizer for the robot_splunker ROS 2 / Gazebo simulation.",
+	"Modules": [
+		{
+			"Name": "SplunkerViz",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine",
+				"CoreUObject"
+			]
+		}
+	]
+}

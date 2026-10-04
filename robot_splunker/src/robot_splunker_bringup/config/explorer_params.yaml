@@ -1,0 +1,39 @@
+# =============================================================================
+# explorer_params.yaml: frontier_explorer (robot_splunker_exploration) settings.
+# The explorer repeatedly drives (via Nav2) to the best "frontier" - the border
+# between known free space and unknown space - until none are left, then returns
+# home and saves the map. See docs/control.md for tuning advice.
+# =============================================================================
+frontier_explorer:
+  ros__parameters:
+    # ---- Frames / topics ----
+    map_topic: /map
+    global_frame: map
+    robot_frame: base_footprint
+    action_name: navigate_to_pose
+
+    # ---- Frontier detection ----
+    min_frontier_size: 8          # cells; smaller frontier clusters are ignored (noise)
+    occupied_threshold: 50        # occupancy value >= this is an obstacle
+    clearance_radius: 0.30        # m; goal must have no obstacle within this radius
+    goal_search_radius: 0.8       # m; how far to look for a safe goal near a frontier
+    min_goal_distance: 0.5        # m; ignore frontiers closer than this to the robot
+
+    # ---- Scoring: score = size_weight * frontier_length[m] - dist_weight * distance[m] ----
+    size_weight: 1.0
+    dist_weight: 1.0
+
+    # ---- Goal handling ----
+    goal_timeout_s: 90.0          # cancel + blacklist a goal that takes longer than this
+    progress_timeout_s: 20.0      # cancel + blacklist when the robot moved < progress_distance ...
+    progress_distance: 0.15       # ... during progress_timeout_s
+    blacklist_radius: 0.6         # m; frontiers this close to a failed goal are skipped
+    frontier_cleared_radius: 2    # cells; goal is "explored" when no unknown cell is this close
+    replan_period_s: 1.0          # how often the state machine runs
+
+    # ---- Finish ----
+    empty_checks_to_finish: 3     # consecutive "no frontier" checks before declaring done
+    return_home: true             # drive back to the start pose when finished
+    save_map: true                # call SLAM Toolbox save_map + serialize_map when finished
+    # Overridden by explore.launch.py (map_save_path:=...). "~" is expanded.
+    map_save_path: "~/robot_splunker_maps/splunker_cave"

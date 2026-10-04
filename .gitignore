@@ -1,0 +1,28 @@
+# ---- colcon (normally built in ~/robot_splunker_ws, but just in case) ----
+build/
+install/
+log/
+
+# ---- bld.sh pre-check output ----
+build_artifacts/
+
+# ---- local machine settings (copy scripts/.env.example -> scripts/.env) ----
+scripts/.env
+
+# ---- saved maps (keep the folder, not the data) ----
+maps/*
+!maps/.gitkeep
+
+# ---- Python ----
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# ---- Unreal Engine generated folders ----
+unreal/SplunkerViz/Binaries/
+unreal/SplunkerViz/Intermediate/
+unreal/SplunkerViz/Saved/
+unreal/SplunkerViz/DerivedDataCache/
+unreal/SplunkerViz/.vs/
+unreal/SplunkerViz/*.sln
+unreal/SplunkerViz/.vsconfig

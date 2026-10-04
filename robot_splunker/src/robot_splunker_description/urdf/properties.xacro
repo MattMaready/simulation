@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<!--
+  properties.xacro — every dimension and mass of robot_splunker in ONE place.
+  Change the robot here; the URDF, inertia, Gazebo plugins (wheel separation/radius)
+  and docs/robot_model.md all derive from these values.
+  The Unreal twin uses the same numbers (in cm) as UPROPERTY defaults in ASplunkerRobot.
+
+  Frames (REP-103/REP-105):
+    base_footprint : on the ground, directly below the wheel axle centre
+    base_link      : wheel axle centre (wheel_radius above base_footprint) - the
+                     point the differential drive rotates about
+  Units: metres, kilograms, radians.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ===== Chassis (box body) ===== -->
+  <xacro:property name="chassis_length" value="0.40"/>   <!-- x -->
+  <xacro:property name="chassis_width"  value="0.30"/>   <!-- y -->
+  <xacro:property name="chassis_height" value="0.10"/>   <!-- z -->
+  <xacro:property name="chassis_mass"   value="2.0"/>
+  <!-- Chassis centre relative to base_link: the drive wheels sit 0.10 m behind the
+       chassis centre, so the front caster carries part of the weight. -->
+  <xacro:property name="chassis_x_offset" value="0.10"/>
+  <!-- Ground clearance 0.03 m: centre z (above ground) = 0.03 + h/2 = 0.08,
+       relative to base_link (0.05 above ground) = 0.03 -->
+  <xacro:property name="chassis_z_offset" value="0.03"/>
+
+  <!-- ===== Drive wheels (cylinders) ===== -->
+  <xacro:property name="wheel_radius"     value="0.05"/>
+  <xacro:property name="wheel_width"      value="0.04"/>
+  <xacro:property name="wheel_mass"       value="0.2"/>
+  <!-- Centre-to-centre distance between the wheels (also used by the DiffDrive plugin).
+       0.36 leaves a 1 cm gap between each wheel and the 0.30 m wide chassis. -->
+  <xacro:property name="wheel_separation" value="0.36"/>
+
+  <!-- ===== Front caster (sphere) ===== -->
+  <xacro:property name="caster_radius" value="0.025"/>
+  <xacro:property name="caster_mass"   value="0.05"/>
+  <!-- 0.15 m in front of the chassis centre = 0.25 m in front of the axle -->
+  <xacro:property name="caster_x"      value="${chassis_x_offset + 0.15}"/>
+
+  <!-- ===== 2D lidar (cylinder "puck" on top of the chassis) ===== -->
+  <xacro:property name="lidar_radius" value="0.04"/>
+  <xacro:property name="lidar_height" value="0.05"/>
+  <xacro:property name="lidar_mass"   value="0.1"/>
+  <xacro:property name="lidar_x"      value="0.12"/>
+  <!-- sits on the chassis top: chassis_z_offset + chassis_height/2 + lidar_height/2 -->
+  <xacro:property name="lidar_z"      value="${chassis_z_offset + chassis_height/2 + lidar_height/2}"/>
+  <xacro:property name="lidar_min_range" value="0.12"/>
+  <xacro:property name="lidar_max_range" value="12.0"/>
+  <xacro:property name="lidar_samples"   value="360"/>
+  <xacro:property name="lidar_rate"      value="10"/>
+
+  <!-- ===== IMU (small box at the chassis centre) ===== -->
+  <xacro:property name="imu_size" value="0.02"/>
+  <xacro:property name="imu_mass" value="0.01"/>
+  <xacro:property name="imu_rate" value="100"/>
+
+  <!-- ===== Motion limits (DiffDrive plugin) ===== -->
+  <xacro:property name="max_linear_velocity"      value="0.6"/>
+  <xacro:property name="max_angular_velocity"     value="2.0"/>
+  <xacro:property name="max_linear_acceleration"  value="1.0"/>
+  <xacro:property name="max_angular_acceleration" value="3.0"/>
+
+</robot>

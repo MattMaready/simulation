@@ -1,0 +1,29 @@
+# =============================================================================
+# ue_bridge_params.yaml: ROS 2 -> Unreal Engine WebSocket bridge settings.
+# explore.launch.py overrides `port` (ue_port:=...) and `map_to_world` (spawn pose).
+# =============================================================================
+ue_bridge:
+  ros__parameters:
+    host: "0.0.0.0"            # listen on all interfaces (WSL2 forwards localhost to Windows)
+    port: 9090                 # UE connects to ws://127.0.0.1:9090
+    world_name: "splunker_cave"
+
+    # Send rates (Hz). Ground truth arrives at 50 Hz; 30 Hz is plenty for smooth UE motion
+    # because the UE twin interpolates between updates.
+    pose_rate_hz: 30.0
+    wheel_rate_hz: 30.0
+    slam_pose_rate_hz: 10.0
+    map_rate_hz: 1.0           # SLAM publishes /map every 2 s anyway
+    scan_decimation: 2         # send every 2nd lidar beam (180 points per scan)
+
+    # Frames / joints (must match the URDF)
+    robot_frame: base_footprint
+    lidar_frame: lidar_link
+    map_frame: map
+    left_wheel_joint: left_wheel_joint
+    right_wheel_joint: right_wheel_joint
+    lidar_offset: [0.12, 0.0, 0.155]   # fallback if TF base_footprint->lidar_link is not up yet
+
+    # Pose (x, y, yaw) of SLAM's map frame in the Gazebo world = robot spawn pose.
+    # Set automatically by explore.launch.py from worlds/<world>.meta.json.
+    map_to_world: [0.0, 0.0, 0.0]
