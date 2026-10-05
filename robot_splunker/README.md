@@ -31,7 +31,7 @@ cp scripts/.env.example scripts/.env      # optional: set UE_ROOT for the Unreal
 ./scripts/dn.sh                           # stop everything
 ```
 
-Every script supports `-h` / `--help`.
+Every script supports `-h` / `--help`. To wipe earlier runs and start from a clean slate, see [Start fresh](docs/running.md#5-start-fresh-ignore-previous-runs).
 
 ## Repository layout
 

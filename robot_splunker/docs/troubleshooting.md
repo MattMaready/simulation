@@ -35,6 +35,7 @@ Start every investigation with the log: `tail -f ~/.robot_splunker/run/logs/late
 | Robot oscillates in doorways | Lower `inflation_radius` (0.45) or `desired_linear_vel` in `nav2_params.yaml` |
 | `A stack is already running` | Run `./scripts/dn.sh`. A stale PID file is cleaned up automatically. |
 | Leftover processes after a crash | `./scripts/dn.sh --force` |
+| Want to start completely fresh / something left over from an earlier run | Follow [Start fresh](running.md#5-start-fresh-ignore-previous-runs) in running.md |
 
 ## Unreal twin
 

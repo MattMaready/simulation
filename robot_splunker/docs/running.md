@@ -92,7 +92,52 @@ What `up.sh` does:
 
 It is safe to run when nothing is running.
 
-## 5. Running launch files by hand
+## 5. Start fresh (ignore previous runs)
+
+Each launch already starts with a **new, empty SLAM map** and a fresh explorer, so nothing from an earlier run carries over into the next exploration. Use the steps below when you want a completely clean slate: no leftover processes, logs, saved maps or build outputs.
+
+```bash
+cd /mnt/c/work/stephan/simulation/robot_splunker
+
+# 1. Stop anything still running from earlier (add --ue to also close Unreal)
+./scripts/dn.sh --force
+
+# 2. Delete run state, logs and saved maps
+rm -rf ~/.robot_splunker/run ~/robot_splunker_maps
+find maps -type f ! -name .gitkeep -delete
+
+# 3. Clean rebuild of everything
+./scripts/bld.sh --clean --test
+
+# 4. Start again
+./scripts/up.sh explore --ue --start-ue
+```
+
+What each step clears:
+
+| Item | Location | Cleared by |
+|---|---|---|
+| Running processes (Gazebo, SLAM, Nav2, explorer, bridge, RViz) | | `dn.sh --force` |
+| PID file and run/build logs | `~/.robot_splunker/run/` | step 2 |
+| Maps saved by `up.sh` | `<repo>/maps/` | step 2 |
+| Maps saved by launches started by hand | `~/robot_splunker_maps/` | step 2 |
+| colcon build, install and log | `~/robot_splunker_ws/{build,install,log}` | `bld.sh --clean` |
+| Expanded URDF check output | `<repo>/build_artifacts/` | `bld.sh --clean` |
+| Compiled Unreal code | `unreal/SplunkerViz/{Binaries,Intermediate}` | `bld.sh --clean` |
+
+Optional, for an even deeper reset:
+
+- **Unreal's saved state** (window layout, cached config, its logs). Run this in PowerShell on Windows:
+  ```powershell
+  Remove-Item -Recurse -Force C:\work\stephan\simulation\robot_splunker\unreal\SplunkerViz\Saved
+  ```
+- **The whole colcon workspace, including the `src` link.** `bld.sh` recreates it on the next build:
+  ```bash
+  rm -rf ~/robot_splunker_ws
+  ```
+- **Your own edits to the repo.** None of the steps above touch source files or `scripts/.env`. Use `git status` to see what you've changed and `git restore <file>` to undo a change.
+
+## 6. Running launch files by hand
 
 ```bash
 source /opt/ros/jazzy/setup.bash && source ~/robot_splunker_ws/install/setup.bash
@@ -115,7 +160,7 @@ ros2 launch robot_splunker_bringup explore.launch.py ue:=true      # full autono
 | `map_save_path` | `~/robot_splunker_maps/splunker_cave` | Final map file stem (`up.sh` sets `maps/<world>`) |
 | `use_sim_time` | `true` | |
 
-## 6. Worlds
+## 7. Worlds
 
 Worlds are generated from `worlds/<name>.world.yaml`. Two ship with the repo: `splunker_cave` (four rooms with doorways, pillars and crates) and `empty`. To add one:
 
